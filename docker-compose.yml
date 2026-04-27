@@ -1,0 +1,27 @@
+services:
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    volumes:
+      # ソースコードのマウント（開発用）
+      - ./src:/home/jovyan/jupyter-mynerva/src
+      - ./style:/home/jovyan/jupyter-mynerva/style
+      # Python ソースのみマウント（labextension/ を上書きしないよう個別指定）
+      - ./jupyter_mynerva/__init__.py:/home/jovyan/jupyter-mynerva/jupyter_mynerva/__init__.py
+      - ./jupyter_mynerva/routes.py:/home/jovyan/jupyter-mynerva/jupyter_mynerva/routes.py
+      - ./jupyter_mynerva/echo_agent.py:/home/jovyan/jupyter-mynerva/jupyter_mynerva/echo_agent.py
+      # セッション・設定の永続化
+      - mynerva-data:/home/jovyan/.mynerva
+      # ノートブック作業ディレクトリ
+      - ./notebooks:/home/jovyan/notebooks
+    env_file:
+      - .env
+    environment:
+      - MYNERVA_DEFAULT_PROVIDER=openai
+      - MYNERVA_DEFAULT_MODEL=gpt-4o
+
+volumes:
+  mynerva-data:
