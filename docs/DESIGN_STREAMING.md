@@ -84,7 +84,7 @@ data: [DONE]
 
 ### OpenAI (`chat_openai`) — Responses API
 
-`client.responses.create(model, input, stream=True)` を使用。`system` ロールは `developer` ロールに変換。
+`AsyncOpenAI` クライアントの `await client.responses.create(model, input, stream=True)` を使用し、`async for event in stream` でイベントを消費。`system` ロールは `developer` ロールに変換。
 
 | Responses API イベント | → 統一 SSE |
 |----------------------|-----------|
@@ -101,16 +101,16 @@ Enki Gate も同じ `chat_openai()` を `base_url` 指定で呼ぶ。
 
 ### Anthropic (`chat_anthropic`)
 
-`client.messages.stream(model, **kwargs)` を使用。メッセージ構築は `_build_anthropic_params()` で共通化（`system` ロール抽出、`max_tokens=4096`、actions 付与）。
+`AsyncAnthropic` クライアントの `async with client.messages.stream(model, **kwargs) as stream` + `async for event in stream` を使用。メッセージ構築は `_build_anthropic_params()` で共通化（`system` ロール抽出、`max_tokens=32000`、`thinking={'type': 'enabled', 'budget_tokens': 2000}` で拡張思考を有効化、actions 付与）。
 
 | Anthropic イベント | → 統一 SSE |
 |-------------------|-----------|
 | `content_block_start(thinking)` | `content_block_start(thinking)` |
 | `content_block_start(text)` | `content_block_start(text)` |
 | `content_block_delta(thinking_delta)` | `content_block_delta(thinking, delta)` |
-| `content_block_delta(text_delta)` | `content_block_delta(text, delta)` |
+| `content_block_delta(text_delta)` | `content_block_delta(text, display)`（`_extract_json_content` で content フィールドを抽出） |
 | `content_block_stop` | `content_block_stop(current_block_type)` |
-| `get_final_text()` + `get_final_message()` | `message_done(text, stop_reason)` |
+| `await stream.get_final_text()` + `await stream.get_final_message()` | `message_done(text, stop_reason)` |
 
 ### Echo (`chat_echo`)
 
